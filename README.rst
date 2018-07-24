@@ -139,7 +139,7 @@ Things yet to do implement the missing excel formulas.
     :target: https://coveralls.io/github/vinci1it2000/formulas?branch=master
     :alt: Code coverage
 
-.. |docs_status| image:: https://readthedocs.org/projects/formulas/badge/?version=master
+.. |docs_status| image:: https://formulas.readthedocs.io/en/stable/?badge=stable
     :alt: Documentation status
     :target: https://readthedocs.org/builds/formulas/
 
