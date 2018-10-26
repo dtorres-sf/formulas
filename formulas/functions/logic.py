@@ -9,7 +9,7 @@
 """
 Python equivalents of logical Excel functions.
 """
-from . import wrap_ufunc, Error, flatten, get_error, value_return
+from . import wrap_ufunc, Error, flatten, get_error, value_return, wrap_func, raise_errors
 
 FUNCTIONS = {}
 
@@ -51,3 +51,15 @@ FUNCTIONS['IFERROR'] = {
     ),
     'solve_cycle': solve_cycle
 }
+
+def _or(*args):
+    raise_errors(args)
+    return any(flatten(args, check=lambda x: isinstance(x, bool)))
+
+FUNCTIONS['OR'] = wrap_func(_or)
+
+def _and(*args):
+    return all(flatten(args, check=lambda x: isinstance(x, bool)))
+
+FUNCTIONS['AND'] = wrap_func(_and)
+

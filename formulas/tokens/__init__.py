@@ -64,6 +64,9 @@ class Token:
     def __repr__(self):
         return '{} <{}>'.format(self.name, self.__class__.__name__)
 
+    def __getstate__(self): return self.__dict__
+    def __setstate__(self, d): self.__dict__.update(d)
+
     def process(self, match, context=None):
         return {k: v for k, v in match.groupdict().items() if v is not None}
 
