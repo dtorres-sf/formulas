@@ -26,10 +26,19 @@ class Function(Token):
         t = Parenthesis('(')
         t.attr['check_n'] = check_n
         t.ast(tokens, stack, builder)
+        self.bind = False
 
     def compile(self):
         from formulas.functions import get_functions
-        return get_functions()[self.name.upper()]
+        ret = get_functions()[self.name.upper()]
+        if(getattr(ret, "bind", False)):
+            self.bind = True
+            ret = functools.partial(ret, self.context["cell"])
+        return ret
+
+    def exists(self):
+        from formulas.functions import get_functions
+        return self.name.upper() in get_functions()
 
     def set_expr(self, *tokens):
         args = ', '.join(t.get_expr for t in tokens)

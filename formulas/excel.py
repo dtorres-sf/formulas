@@ -12,6 +12,11 @@ It provides excel model class.
 
 import os.path as osp
 import schedula as sh
+import dill
+
+from schedula.utils.io import save_dispatcher, load_dispatcher
+
+from formulas.errors import FormulaError
 from .ranges import Ranges
 from .cell import Cell, RangesAssembler
 from .tokens.operand import range2parts
@@ -66,12 +71,108 @@ class ExcelModel(object):
         self.pushes(*book.worksheets, context=context)
         return self
 
+
+    def _load_bin(self, fn):
+        with open(fn, 'rb') as f:
+            return dill.load(f)
+
+    def _save_bin(self, obj, fn):
+        with open(fn, 'wb') as f:
+            dill.dump(obj, f)
+
+    def save_bin(self, fn):
+        self._save_bin(self, fn + ".fxl")
+        #save_dispatcher(self.dsp, fn + ".dsp")
+        #self._save_bin(self.cells, fn + ".cell")
+        #self._save_bin(self.books, fn + ".book")
+
+    def _update_constant_value(self, attr, value):
+        setattr(sh.utils.cst, attr, value)
+        setattr(sh.utils.sol, attr, value)
+        setattr(sh.dispatcher, attr, value)
+        setattr(sh.utils.alg, attr, value)
+        setattr(sh.utils, attr, value)
+        setattr(sh.utils.base, attr, value)
+        setattr(sh, attr, value)
+
+    def _update_constants(self, constant_token):
+        k = constant_token
+        if(str(k) == "start"):
+            self._update_constant_value("START", k)
+            #sh.utils.cst.START = k
+            #sh.utils.sol.START = k
+            #sh.dispatcher.START = k
+            #sh.START = k
+        if(str(k) == "empty"):
+            self._update_constant_value("EMPTY", k)
+            #sh.utils.cst.EMPTY = k
+            #sh.utils.sol.EMPTY = k
+            #sh.dispatcher.EMPTY = k
+            #sh.utils.alg.EMPTY = k
+            #sh.EMPTY = k
+        if(str(k) == "none"):
+            self._update_constant_value("NONE", k)
+            #sh.utils.cst.NONE = k
+            #sh.utils.sol.NONE = k
+            #sh.dispatcher.NONE = k
+            #sh.utils.alg.NONE = k
+            #sh.utils.NONE = k
+            #sh.utils.base.NONE = k
+            #sh.NONE = k
+        if(str(k) == "sink"):
+            self._update_constant_value("SINK", k)
+            #sh.utils.cst.SINK = k
+            #sh.utils.sol.SINK = k
+            #sh.dispatcher.SINK = k
+            #sh.SINK = k
+        if(str(k) == "end"):
+            self._update_constant_value("END", k)
+            #sh.utils.cst.END = k
+            #sh.utils.sol.END = k
+            #sh.dispatcher.END = k
+            #sh.END = k
+        if(str(k) == "self"):
+            self._update_constant_value("SELF", k)
+            #sh.utils.cst.SELF = k
+            #sh.utils.sol.SELF = k
+            #sh.dispatcher.SELF = k
+            #sh.SELF = k
+        if(str(k) == "plot"):
+            self._update_constant_value("PLOT", k)
+            #sh.utils.cst.PLOT = k
+            #sh.utils.sol.PLOT = k
+            #sh.dispatcher.PLOT = k
+            #sh.PLOT = k
+
+    def load_bin(self, fn):
+        #self.dsp = load_dispatcher(fn + ".dsp")
+        #self.cells = self._load_bin(fn + ".cell")
+        #self.books = self._load_bin(fn + ".book")
+        xl_model = self._load_bin(fn + ".fxl")
+        self.dsp = xl_model.dsp
+        self.cells = xl_model.cells
+        self.books = xl_model.books
+        self.calculate = self.dsp.dispatch
+        #return
+        for k, v in self.dsp.nodes.items():
+            self._update_constants(k)
+            self._update_constants(v)
+        for k, v in self.cells.items():
+            if(str(v.range._value)=="none"):
+                self._update_constants(v.range._value)
+                break
+
     def pushes(self, *worksheets, context=None):
         for ws in worksheets:
             self.push(ws, context=context)
         return self
 
     def push(self, worksheet, context):
+        #if(worksheet.title != "Rating Factors"):
+        #    return
+
+        #if(str(worksheet) == "Forms Listing (2)"):
+        #    return self
         worksheet, context = self.add_sheet(worksheet, context)
 
         get_in = sh.get_nested_dicts
@@ -180,7 +281,12 @@ class ExcelModel(object):
         )
         crd = cell.coordinate
         crd = formula_references.get(crd, crd)
-        cell = Cell(crd, cell.value, context=context).compile()
+        #cell = Cell(crd, cell.value, context=context).compile()
+        try:
+            cell = Cell(crd, cell.value, context=context).compile()
+        except FormulaError:
+            # There was an error so set this value with the NA error using the excel function
+            cell = Cell(crd, "=NA()", context=context).compile()
         if cell.output in self.cells:
             return
         if cell.value is not sh.EMPTY:
@@ -261,12 +367,48 @@ class ExcelModel(object):
 
         return books
 
+    def check(self, inputs, outputs):
+        dsp = self.dsp.shrink_dsp(outputs=outputs)
+
+        res = dsp()
+        dsp = dsp.get_sub_dsp_from_workflow(
+            outputs, graph=dsp.dmap, reverse=True, blockers=res,
+            wildcard=False
+        )
+        if outputs:
+            missed = set(outputs).difference(dsp.nodes)  # Outputs not reached.
+
+            if missed:  # If outputs are missing raise error.
+
+                available = list(dsp.data_nodes.keys())  # Available data nodes.
+
+                # Raise error
+                msg = '\n  Unreachable output-targets: {}\n  Available ' \
+                      'outputs: {}'.format(missed, available)
+                raise ValueError(msg)
+
+    def save_dict(self, d, fn):
+        with open(fn, "w") as f:
+            for k, v in d.items():
+                f.write("{} :: {}".format(k, v))
+                f.write("\n")
+
+
     def compile(self, inputs, outputs):
         dsp = self.dsp.shrink_dsp(outputs=outputs)
 
         dsp.default_values = sh.selector(
             set(dsp.default_values) - set(inputs), dsp.default_values
         )
+
+        #dsp.default_values = sh.selector(
+        #    set(dsp.default_values) - set(inputs), dsp.default_values
+        #)
+        #import networkx
+        #for x in networkx.algorithms.simple_cycles(dsp.dmap):
+        #    print("-------------------")
+        #    print(x)
+        #    print("*****************")
 
         res = dsp()
 
@@ -277,12 +419,15 @@ class ExcelModel(object):
 
         for k, v in sh.selector(dsp.data_nodes, res, allow_miss=True).items():
             dsp.set_default_value(k, v.value)
-
+        #dsp = self.dsp
         func = self.compile_class(
             dsp=dsp,
             function_id=self.dsp.name,
             inputs=inputs,
-            outputs=outputs
+            outputs=outputs,
         )
 
         return func
+
+def call_func(func, *args):
+    return func(*args)

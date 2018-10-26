@@ -41,13 +41,25 @@ class String(Operand):
     def compile(self):
         return self.name.replace('""', '"')
 
+    @property
+    def node_id(self):
+        # A string could be the same as the name of an operator (example "OR" used inside OR function)
+        return "__" + self.get_expr
+
+class TracebackDict(dict):
+
+    def __getitem__(self, item):
+        if(item != '#N/A') :
+            import traceback
+            traceback.print_stack()
+        return super(TracebackDict, self).__getitem__(item)
 
 class Error(Operand):
     _re = regex.compile(
         r'^\s*(?P<name>\#(?>NULL!|DIV/0!|VALUE!|REF!|NUM!|NAME\?|N/A))\s*',
         regex.IGNORECASE
     )
-    errors = {}
+    errors = TracebackDict()
     for k in ('NULL!', 'DIV/0!', 'VALUE!', 'REF!', 'NUM!', 'NAME?', 'N/A'):
         k = '#%s' % k
         errors[k] = XlError(k)
@@ -83,13 +95,13 @@ _re_range = r"""
         (?>
             (?>
                 (?>
-                    \$?(?P<c1>[A-Z]+)?\$?(?P<r1>[1-9]\d*)?
-                    (?>:\$?(?P<c2>[A-Z]+)?)(\$?(?P<r2>[1-9]\d*)?)?
+                    \$?(?P<c1>[A-Z]{1,3})?\$?(?P<r1>[1-9]\d*)?
+                    (?>:\$?(?P<c2>[A-Z]{1,3})?)(\$?(?P<r2>[1-9]\d*)?)?
                 )
             |
-                \$?(?P<c1>[A-Z]+)\$?(?P<r1>[1-9]\d*)
+                \$?(?P<c1>[A-Z]{1,3})\$?(?P<r1>[1-9]\d*)
             |
-                \$?(?P<c1>[A-Z]+):\$?(?P<c2>[A-Z]+)
+                \$?(?P<c1>[A-Z]{1,3}):\$?(?P<c2>[A-Z]{1,3})
             |
                 \$?(?P<r1>[1-9]\d*):\$?(?P<r2>[1-9]\d*)
             )
@@ -174,10 +186,15 @@ def _build_ref(c1, r1, c2, r2):
 
 _re_build_id = regex.compile(r'^[0-9]+$')
 def _build_id(ref, sheet='', excel=''):
-    if excel:
+    if excel and _re_build_id.match(excel):
+        # external books not working for remote directories. Just ignore it for now and assume same name sheet
+        # exists in main book
+        pass
+    elif excel:
         sheet = "[%s]%s" % (excel, sheet.replace("''", "'"))
         if not _re_build_id.match(excel):
             sheet = "'%s'" % sheet
+
 
     return '!'.join(s for s in (sheet, ref) if s)
 

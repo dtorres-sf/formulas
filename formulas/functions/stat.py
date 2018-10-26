@@ -10,6 +10,8 @@
 Python equivalents of statistical excel functions.
 """
 from . import raise_errors, flatten, wrap_func, Error
+import schedula as sh
+import warnings
 
 FUNCTIONS = {}
 
@@ -39,3 +41,18 @@ def xmin(*args):
 
 
 FUNCTIONS['MIN'] = wrap_func(xmin)
+
+def counta(*args):
+    raise_errors(args)
+    count = len(list(flatten(args, check=lambda x: x and x is not sh.EMPTY)))
+    return count
+
+FUNCTIONS['COUNTA'] = wrap_func(counta)
+
+def countif(range, condition):
+    warnings.warn("COUNTIF does not handle more complex condiitons such as >5 ")
+    test_cond = list(flatten(condition, None))[0]
+    return len(list(flatten(range, check=lambda x: x == test_cond)))
+
+FUNCTIONS['COUNTIF'] = wrap_func(countif)
+

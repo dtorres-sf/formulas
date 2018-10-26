@@ -325,6 +325,25 @@ def xsum(*args):
 
 
 FUNCTIONS['SUM'] = wrap_func(xsum)
+
+def xsumif(test_range, condition, sum_range=None):
+    if(sum_range is None):
+        sum_range = test_range
+    ret = 0
+    sum_r = list(flatten(sum_range, None))
+    test_r = list(flatten(test_range, None))
+    for i in range(0, len(test_r)):
+        if(test_r[i] == condition):
+            ret += sum_r[i]
+    #for x in sum_range:
+    #    for y in x:
+    #        if(test_range[x, y] == list(flatten(condition, None))[0]):
+    #            ret += y
+    return ret
+
+
+FUNCTIONS['SUMIF'] = wrap_func(xsumif)
+
 FUNCTIONS['TAN'] = wrap_ufunc(np.tan)
 FUNCTIONS['TANH'] = wrap_ufunc(np.tanh)
 FUNCTIONS['TRUNC'] = wrap_ufunc(functools.partial(xround, func=math.trunc))

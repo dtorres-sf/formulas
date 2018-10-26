@@ -38,6 +38,7 @@ class Cell(object):
         self.value = sh.EMPTY
         self.tokens, self.builder = (), None
         if isinstance(value, str) and self.parser.is_formula(value):
+            context["cell"] = self
             self.tokens, self.builder = self.parser.ast(value, context=context)
         elif value is not None:
             self.value = value
@@ -55,6 +56,8 @@ class Cell(object):
     def compile(self, references=None):
         if self.builder:
             func = self.builder.compile(references=references)
+            #if(func.bind):
+            #    func = functools.partial(func, self)
             self.func = wrap_cell_func(func, self._args)
             self.update_inputs(references=references)
         return self

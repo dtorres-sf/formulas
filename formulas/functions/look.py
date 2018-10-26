@@ -12,7 +12,7 @@ Python equivalents of lookup and reference excel functions.
 import regex
 import functools
 import numpy as np
-from . import wrap_ufunc, Error, flatten, get_error, XlError, FoundError
+from . import wrap_ufunc, Error, flatten, get_error, XlError, FoundError, convert_dates
 
 FUNCTIONS = {}
 
@@ -33,17 +33,28 @@ def _yield_vals(type_id, array):
 def xmatch(lookup_value, lookup_array, match_type=1):
     res = [Error.errors['#N/A']]
     t_id = _get_type_id(lookup_value)
+    print(lookup_value)
+    print(lookup_array)
     if match_type > 0:
         def check(j, x, val, r):
+            print(x)
+            print(val)
+            print(x <= val)
+            #try:
             if x <= val:
                 r[0] = j
                 return x == val and j > 1
+            #except TypeError:
+            #    pass # Can't compare all types (like datetime to blank). Excel allows this.
             return j > 1
 
     elif match_type < 0:
         def check(j, x, val, r):
+            #try:
             if x < val:
                 return True
+            #except TypeError:
+            #    pass
             r[0] = j
             return v == val
 
@@ -71,6 +82,7 @@ def xmatch(lookup_value, lookup_array, match_type=1):
 
     lookup_value = convert(lookup_value)
     for i, v in _yield_vals(t_id, lookup_array):
+        print(i)
         if check(i, convert(v), lookup_value, res):
             break
     return res[0]
@@ -79,8 +91,9 @@ def xmatch(lookup_value, lookup_array, match_type=1):
 FUNCTIONS['MATCH'] = wrap_ufunc(
     xmatch,
     input_parser=lambda val, vec, match_type=1: (
-        val, list(flatten(vec, None)), match_type
+        val, list(flatten(convert_dates(vec), None)), match_type
     ),
+    args_parser=lambda *a: a,
     check_error=lambda *a: get_error(a[:1]), excluded={1, 2}
 )
 
@@ -96,14 +109,16 @@ def xlookup(lookup_val, lookup_vec, result_vec=None, match_type=1):
 FUNCTIONS['LOOKUP'] = wrap_ufunc(
     xlookup,
     input_parser=lambda val, vec, res=None: (
-        val, list(flatten(vec, None)),
+        convert_dates(val), list(flatten(convert_dates(vec), None)),
         res if res is None else list(flatten(res, None))
     ),
+    args_parser=lambda *a: a,
     check_error=lambda *a: get_error(a[:1]), excluded={1, 2}
 )
 
 
 def _hlookup_parser(val, vec, index, match_type=1, transpose=False):
+    print(vec)
     index = list(flatten(index, None))[0] - 1
     vec = np.matrix(vec)
     if transpose:
@@ -112,15 +127,29 @@ def _hlookup_parser(val, vec, index, match_type=1, transpose=False):
         ref = list(flatten(vec[index].A1, None))
     except IndexError:
         raise FoundError(err=Error.errors['#REF!'])
-    vec = list(flatten(vec[0].A1, None))
-    return val, vec, ref, bool(match_type)
+    vec = list(flatten(convert_dates(vec[0].A1), None))
+    return convert_dates(val), vec, ref, bool(match_type)
 
+def row(cell, range=None):
+    assert(len(cell.range.ranges) == 1)
+    assert(cell.range.ranges[0]['r1'] == cell.range.ranges[0]['r2'])
+    assert(range==None)
+    return int(cell.range.ranges[0]['r1'])
+
+row.bind = True
 
 FUNCTIONS['HLOOKUP'] = wrap_ufunc(
     xlookup, input_parser=_hlookup_parser,
+    args_parser=lambda *a: a,
     check_error=lambda *a: get_error(a[:1]), excluded={1, 2, 3}
 )
 FUNCTIONS['VLOOKUP'] = wrap_ufunc(
     xlookup, input_parser=functools.partial(_hlookup_parser, transpose=True),
+    args_parser=lambda *a: a,
     check_error=lambda *a: get_error(a[:1]), excluded={1, 2, 3}
 )
+
+FUNCTIONS['ROW'] = wrap_ufunc(row,
+                              input_parser=lambda *a: a)
+
+FUNCTIONS['ROW'].bind = True
