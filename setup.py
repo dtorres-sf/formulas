@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: UTF-8 -*-
 #
-# Copyright 2014 European Commission (JRC);
+# Copyright 2016-2018 European Commission (JRC);
 # Licensed under the EUPL (the 'Licence');
 # You may not use this work except in compliance with the Licence.
 # You may obtain a copy of the Licence at: http://ec.europa.eu/idabc/eupl
@@ -33,12 +33,15 @@ def get_long_description(cleanup=True):
     import tempfile
     import shutil
     from doc.conf import extensions
-
+    from sphinxcontrib.writers.rst import RstTranslator
+    from sphinx.ext.graphviz import text_visit_graphviz
+    RstTranslator.visit_dsp = text_visit_graphviz
     outdir = tempfile.mkdtemp(prefix='setup-', dir='.')
     exclude_patterns = os.listdir(mydir or '.')
     exclude_patterns.remove('pypi.rst')
 
-    app = Sphinx(abspath(mydir), './doc/', outdir, outdir + '/.doctree', 'rst',
+    app = Sphinx(abspath(mydir), osp.join(mydir, 'doc/'), outdir,
+                 outdir + '/.doctree', 'rst',
                  confoverrides={
                      'exclude_patterns': exclude_patterns,
                      'master_doc': 'pypi',
@@ -47,7 +50,10 @@ def get_long_description(cleanup=True):
                  }, status=None, warning=None)
 
     app.build(filenames=[osp.join(app.srcdir, 'pypi.rst')])
-    res = open(outdir + '/pypi.rst').read()
+
+    with open(outdir + '/pypi.rst') as file:
+        res = file.read()
+
     if cleanup:
         shutil.rmtree(outdir)
     return res
@@ -59,24 +65,32 @@ download_url = '%s/tarball/v%s' % (url, proj_ver)
 project_urls = collections.OrderedDict((
     ('Documentation', 'http://%s.readthedocs.io' % name),
     ('Issue tracker', '%s/issues' % url),
+    ('Donate', 'https://donorbox.org/formulas'),
 ))
 
 if __name__ == '__main__':
     import functools
     from setuptools import setup, find_packages
 
-    # noinspection PyBroadException
     try:
         long_description = get_long_description()
-    except:
+    except Exception as ex:
+        import logging
+
+        logging.getLogger(__name__).warning('%r', ex)
         long_description = ''
 
     extras = {
-        'excel': ['openpyxl'],
+        'excel': ['openpyxl', 'networkx'],
         'plot': ['graphviz', 'regex', 'flask', 'Pygments', 'lxml', 'bs4',
                  'jinja2', 'docutils']  # ['schedula[plot]>=0.2.0']
     }
     extras['all'] = sorted(functools.reduce(set.union, extras.values(), set()))
+    extras['dev'] = extras['all'] + [
+        'wheel', 'sphinx', 'gitchangelog', 'mako', 'sphinx_rtd_theme',
+        'setuptools>=36.0.1', 'sphinxcontrib-restbuilder', 'nose', 'coveralls',
+        'ddt'
+    ]
 
     setup(
         name=name,
@@ -92,7 +106,8 @@ if __name__ == '__main__':
         license='EUPL 1.1+',
         author='Vincenzo Arcidiacono',
         author_email='vinci1it2000@gmail.com',
-        description='Parse and compile excel formulas in python code.',
+        description='Parse and compile Excel formulas and workbooks in python '
+                    'code.',
         long_description=long_description,
         keywords=[
             "python", "utility", "library", "excel", "formulas", "processing",
@@ -123,7 +138,7 @@ if __name__ == '__main__':
         ],
         install_requires=[
             'regex',
-            'schedula>=0.2.0',
+            'schedula>=0.2.8',
             'numpy'
         ],
         extras_require=extras,

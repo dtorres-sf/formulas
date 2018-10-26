@@ -40,12 +40,23 @@ class AstBuilder(collections.deque):
             token.set_expr(*tokens)
             out, dmap, get_id = token.node_id, self.dsp.dmap, get_unused_node_id
             if out not in self.dsp.nodes:
-                self.dsp.add_function(
+                func = token.compile()
+                kw = dict(
                     function_id=get_id(dmap, token.name),
-                    function=token.compile(),
+                    function=func,
                     inputs=inputs or None,
-                    outputs=[out]
+                    outputs=[out],
                 )
+                if isinstance(func, dict):
+                    _inputs = func.get('extra_inputs', {})
+                    for k, v in _inputs.items():
+                        if v is not sh.NONE:
+                            self.dsp.add_data(k, v)
+                    kw = sh.combine_dicts(
+                        {'inputs': (list(_inputs) + inputs) or None}, func,
+                        base=kw
+                    )
+                self.dsp.add_function(**kw)
             else:
                 self.nodes[token] = n_id = get_id(dmap, out, 'c%d>{}')
                 self.dsp.add_function(None, sh.bypass, [out], [n_id])
@@ -73,12 +84,11 @@ class AstBuilder(collections.deque):
         for token in list(self.missing_operands):
             self.get_node_id(token)
 
-    def compile(self, references=None):
-        dsp = self.dsp
-        inputs = {}
+    def compile(self, references=None, **inputs):
+        dsp, inp = self.dsp, inputs.copy()
         for k in set(dsp.data_nodes).intersection(references or {}):
-            inputs[k] = Ranges().push(references[k])
-        res, o = dsp(inputs), self.get_node_id(self[-1])
+            inp[k] = Ranges().push(references[k])
+        res, o = dsp(inp), self.get_node_id(self[-1])
         dsp = dsp.get_sub_dsp_from_workflow(
             [o], graph=dsp.dmap, reverse=True, blockers=res,
             wildcard=False
@@ -90,7 +100,7 @@ class AstBuilder(collections.deque):
             if not dsp.dmap.pred[k]:
                 if k in res:
                     v = res[k]
-                    if isinstance(v, Ranges) and v.ranges:
+                    if k not in inputs and isinstance(v, Ranges) and v.ranges:
                         i[k] = v
                     else:
                         dsp.add_data(data_id=k, default_value=v)

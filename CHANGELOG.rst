@@ -2,6 +2,94 @@ Changelog
 =========
 
 
+v0.1.4 (2018-10-19)
+-------------------
+
+Fix
+~~~
+- (tokens) :gh:`20`: Improve Number regex.
+
+
+v0.1.3 (2018-10-09)
+-------------------
+
+Feat
+~~~~
+- (excel) :gh:`16`: Solve circular references.
+
+- (setup): Add donate url.
+
+
+Fix
+~~~
+
+- (functions) :gh:`18`: Enable `check_error` in `IF` function just for
+  the first argument.
+
+- (functions) :gh:`18`: Disable `input_parser` in `IF` function to
+  return any type of values.
+
+- (rtd): Define `fpath` from `prj_dir` for rtd.
+
+- (rtd): Add missing requirements `openpyxl` for rtd.
+
+- (setup): Patch to use `sphinxcontrib.restbuilder` in setup
+  `long_description`.
+
+
+Other
+~~~~~
+- Update documentation.
+
+- Replace `excel` with `Excel`.
+
+- Create PULL_REQUEST_TEMPLATE.md.
+
+- Update issue templates.
+
+- Update copyright.
+
+- (doc): Update author mail.
+
+
+v0.1.2 (2018-09-12)
+-------------------
+
+Feat
+~~~~
+- (functions) :gh:`14`: Add `ROW` and `COLUMN`.
+
+- (cell): Pass cell reference when compiling cell + new function struct
+  with dict to add inputs like CELL.
+
+Fix
+~~~
+- (ranges): Replace system max size with excel max row and col.
+
+- (tokens): Correct number regex.
+
+
+v0.1.1 (2018-09-11)
+-------------------
+
+Feat
+~~~~
+- (contrib): Add contribution instructions.
+
+- (setup): Add additional project_urls.
+
+- (setup): Update `Development Status` to `4 - Beta`.
+
+
+Fix
+~~~
+
+- (init) :gh:`15`: Replace `FUNCTIONS` and `OPERATORS` objs with
+  `get_functions`, `SUBMODULES`.
+
+- (doc): Correct link docs_status.
+
+
 v0.1.0 (2018-07-20)
 -------------------
 

@@ -6,13 +6,14 @@ formulas: An Excel formulas interpreter in Python.
 |pypi_ver| |travis_status| |appveyor_status| |cover_status| |docs_status|
 |dependencies| |github_issues| |python_ver| |proj_license|
 
-:release:       0.1.0
-:date:          2018-07-20 08:00:00
+:release:       0.1.4
+:date:          2018-10-19 11:00:00
 :repository:    https://github.com/vinci1it2000/formulas
 :pypi-repo:     https://pypi.org/project/formulas/
 :docs:          http://formulas.readthedocs.io/
 :wiki:          https://github.com/vinci1it2000/formulas/wiki/
 :download:      http://github.com/vinci1it2000/formulas/releases/
+:donate:        https://donorbox.org/formulas
 :keywords:      excel, formulas, interpreter, compiler, dispatch
 :developers:    .. include:: AUTHORS.rst
 :license:       `EUPL 1.1+ <https://joinup.ec.europa.eu/software/page/eupl>`_
@@ -22,11 +23,11 @@ formulas: An Excel formulas interpreter in Python.
 
 What is formulas?
 =================
-Formulas implements an interpreter for excel formulas, which parses and compile
-excel formulas expressions.
+**formulas** implements an interpreter for Excel formulas, which parses and
+compile Excel formulas expressions.
 
-Moreover, it compiles excel workbooks to python and executes without using the
-Excel COM server. Hence,  **Excel is not needed**.
+Moreover, it compiles Excel workbooks to python and executes without using the
+Excel COM server. Hence, **Excel is not needed**.
 
 
 Installation
@@ -48,9 +49,9 @@ Install extras
 --------------
 Some additional functionality is enabled installing the following extras:
 
-- excel: enables to compile excel workbooks to python and execute using:
+- excel: enables to compile Excel workbooks to python and execute using:
   :class:`~formulas.excel.ExcelModel`.
-- plot: enables to plot the formula ast and the excel model.
+- plot: enables to plot the formula ast and the Excel model.
 
 To install formulas and all extras, do:
 
@@ -62,10 +63,16 @@ To install formulas and all extras, do:
 
 Basic Examples
 ==============
+The following sections will show how to:
 
-Parsing
--------
-An example how to parse and execute an excel formula is the following:
+- parse a Excel formulas;
+- load, compile, and execute a Excel workbook;
+- extract a sub-model from a Excel workbook;
+- add a custom function.
+
+Parsing formula
+---------------
+An example how to parse and execute an Excel formula is the following:
 
     >>> import formulas
     >>> func = formulas.Parser().ast('=(1 + 1) + B3 / A2')[1].compile()
@@ -92,38 +99,67 @@ Finally to execute the formula and plot the workflow:
     >>> func.plot(workflow=True, view=False)  # Set view=True to plot in the default browser.
     SiteMap([(=((1 + 1) + (B3 / A2)), SiteMap())])
 
-Excel
------
-An example how to load, calculate, and write an excel workbook is the following:
+Excel workbook
+--------------
+An example how to load, calculate, and write an Excel workbook is the following:
+
+.. testsetup::
+
+    >>> import os.path as osp
+    >>> from setup import mydir
+    >>> fpath = osp.join(mydir, 'test/test_files/excel.xlsx')
+
+.. doctest::
 
     >>> import formulas
-    >>> fpath = 'test/test_files/excel.xlsx'
+    >>> fpath = 'file.xlsx'  # doctest: +SKIP
     >>> xl_model = formulas.ExcelModel().loads(fpath).finish()
     >>> xl_model.calculate()
     Solution(...)
     >>> xl_model.write()
     {'EXCEL.XLSX': {Book: <openpyxl.workbook.workbook.Workbook ...>}}
 
+.. tip:: If you have or could have **circular references**, add `circular=True`
+   to `finish` method.
 
-To compile and execute a sub model from a workbook you can do the following:
+To plot the dependency graph that depict relationships between Excel cells:
+
+.. dispatcher:: dsp
+   :code:
+
+    >>> dsp = xl_model.dsp
+    >>> dsp.plot(view=False)  # Set view=True to plot in the default browser.
+    SiteMap([(Dispatcher ..., SiteMap())])
+
+To compile, execute, and plot a Excel sub-model you can do the following:
+
+.. dispatcher:: func
+   :code:
 
     >>> inputs = ["'[EXCEL.XLSX]DATA'!A2"]  # input cells
     >>> outputs = ["'[EXCEL.XLSX]DATA'!C2"]  # output cells
     >>> func = xl_model.compile(inputs, outputs)
     >>> func(2).value[0,0]
     4.0
-
-.. dispatcher:: func
-   :code:
-
     >>> func.plot(view=False)  # Set view=True to plot in the default browser.
     SiteMap([(Dispatcher ..., SiteMap())])
+
+Custom functions
+----------------
+An example how to add a custom function to the formula parser is the following:
+
+    >>> import formulas
+    >>> FUNCTIONS = formulas.get_functions()
+    >>> FUNCTIONS['MYFUNC'] = lambda x, y: 1 + y + x
+    >>> func = formulas.Parser().ast('=MYFUNC(1, 2)')[1].compile()
+    >>> func()
+    4
 
 .. _end-pypi:
 
 Next moves
 ==========
-Things yet to do implement the missing excel formulas.
+Things yet to do: implement the missing Excel formulas.
 
 .. _end-intro:
 .. _start-badges:
@@ -139,9 +175,9 @@ Things yet to do implement the missing excel formulas.
     :target: https://coveralls.io/github/vinci1it2000/formulas?branch=master
     :alt: Code coverage
 
-.. |docs_status| image:: https://formulas.readthedocs.io/en/stable/?badge=stable
+.. |docs_status| image:: https://readthedocs.org/projects/formulas/badge/?version=stable
     :alt: Documentation status
-    :target: https://readthedocs.org/builds/formulas/
+    :target: https://formulas.readthedocs.io/en/stable/?badge=stable
 
 .. |pypi_ver| image::  https://img.shields.io/pypi/v/formulas.svg?
     :target: https://pypi.python.org/pypi/formulas/
