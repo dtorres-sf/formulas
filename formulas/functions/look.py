@@ -65,13 +65,8 @@ FUNCTIONS['ROW'] = {
 def xmatch(lookup_value, lookup_array, match_type=1):
     res = [Error.errors['#N/A']]
     t_id = _get_type_id(lookup_value)
-    print(lookup_value)
-    print(lookup_array)
     if match_type > 0:
         def check(j, x, val, r):
-            print(x)
-            print(val)
-            print(x <= val)
             #try:
             if x <= val:
                 r[0] = j
@@ -114,7 +109,6 @@ def xmatch(lookup_value, lookup_array, match_type=1):
 
     lookup_value = convert(lookup_value)
     for i, v in _yield_vals(t_id, lookup_array):
-        print(i)
         if check(i, convert(v), lookup_value, res):
             break
     return res[0]
@@ -150,7 +144,6 @@ FUNCTIONS['LOOKUP'] = wrap_ufunc(
 
 
 def _hlookup_parser(val, vec, index, match_type=1, transpose=False):
-    print(vec)
     index = list(flatten(index, None))[0] - 1
     vec = np.matrix(vec)
     if transpose:

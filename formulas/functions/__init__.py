@@ -149,25 +149,15 @@ def excel_datevalue(d):
 
 
 def convert_dates(l):
-    print("NEW CALL")
-    print(l)
     if(isinstance(l, np.ndarray)):
         for x in np.nditer(l, op_flags=['readwrite'], flags=['refs_ok']):
-            print("-----")
-            print(x.dtype)
-            print(x.item())
-            print(type(x.item()))
             if(isinstance(x.item(), datetime.date)):
                 x[...] = excel_datevalue(x.item())
 
-            print(x.item())
-            print(type(x.item()))
-            print(x.dtype)
             #if(isinstance(x, datetime.date)):
             #    x[...] = excel_datevalue(x)
     elif(isinstance(l, datetime.date)):
         return excel_datevalue(l)
-    print(l)
     return l
 
 def flatten(l, check=is_number):
@@ -197,7 +187,7 @@ def wrap_ufunc(
                     # Leave r unchanged. Most likely a date value that can't be cast to nan or inf
                     pass
         except (ValueError, TypeError) as e:
-            print(e)
+            #print(e)
             r = Error.errors['#VALUE!']
         return r
 

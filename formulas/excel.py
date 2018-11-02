@@ -405,15 +405,6 @@ class ExcelModel(object):
             set(dsp.default_values) - set(inputs), dsp.default_values
         )
 
-        #dsp.default_values = sh.selector(
-        #    set(dsp.default_values) - set(inputs), dsp.default_values
-        #)
-        #import networkx
-        #for x in networkx.algorithms.simple_cycles(dsp.dmap):
-        #    print("-------------------")
-        #    print(x)
-        #    print("*****************")
-
         res = dsp()
 
         dsp = dsp.get_sub_dsp_from_workflow(
@@ -422,7 +413,11 @@ class ExcelModel(object):
         )
 
         for k, v in sh.selector(dsp.data_nodes, res, allow_miss=True).items():
-            dsp.set_default_value(k, v.value)
+            try:
+                dsp.set_default_value(k, v.value)
+            except AttributeError:
+                # Circular token does not have v.value (it is an XlError)
+                pass
         #dsp = self.dsp
         func = self.compile_class(
             dsp=dsp,

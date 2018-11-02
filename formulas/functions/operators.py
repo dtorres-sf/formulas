@@ -30,13 +30,30 @@ class OperatorArray(Array):
 
 
 
-def date_input_parser(*args):
-    print(args)
+def numeric_input_parser(*args):
     ret = []
     has_date = False
-    print ("hello")
     for x in args:
-        print(type(x))
+        if(isinstance(x, str)):
+            # Cast strings to numbers for math operators (just as excel does)
+            if(x):
+                try:
+                    #ret.append(float(x))
+                    # If casting to float it fixes the issue with multiplying string values with numbers
+                    # however calculations are wrong.
+                    # If this does not cast to float class code 33 and 3 and 6 work. But 9 does not work.
+                    # When casting, nothing works but 9 is closer since it corectly does osme of the calculations
+                    # specifically 0210: =IF(OR(LEFT($Classification.C69,5)*1=91340,LEFT($Classification.C69,5)*1=91342),"GC","TC")
+                    if("." in x):
+                        ret.append(float(x))
+                    else:
+                        ret.append(int(x))
+                except ValueError:
+                    ret.append(x)
+            else:
+                #ret.append(0)
+                ret.append(x)
+            continue
         if(isinstance(x, datetime.date)):
             has_date = True
         if(has_date):
@@ -44,15 +61,12 @@ def date_input_parser(*args):
                 ret.append(x)
             else:
                 try:
-                    #ret.append(np.timedelta64(x, 'D'))
                     ret.append(datetime.timedelta(days=x))
-                    print("Adding timedelta")
                 except TypeError:
                     ret.append(x)
 
         else:
             ret.append(x)
-    print(ret)
     return ret
 
 
@@ -61,7 +75,7 @@ def date_output_parser(result):
         return result.days
     return result
 
-numeric_wrap = functools.partial(wrap_ufunc, otype=lambda *a: OperatorArray, input_parser=date_input_parser, output_parser=date_output_parser)
+numeric_wrap = functools.partial(wrap_ufunc, otype=lambda *a: OperatorArray, input_parser=numeric_input_parser, output_parser=date_output_parser)
 #numeric_wrap = functools.partial(wrap_ufunc, otype=lambda *a: np.float64, input_parser=date_input_parser)
 
 
