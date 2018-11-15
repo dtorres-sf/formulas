@@ -145,11 +145,7 @@ class ExcelModel(object):
             #sh.dispatcher.PLOT = k
             #sh.PLOT = k
 
-    def load_bin(self, fn):
-        #self.dsp = load_dispatcher(fn + ".dsp")
-        #self.cells = self._load_bin(fn + ".cell")
-        #self.books = self._load_bin(fn + ".book")
-        xl_model = self._load_bin(fn + ".fxl")
+    def _populate_self(self, xl_model):
         self.dsp = xl_model.dsp
         self.cells = xl_model.cells
         self.books = xl_model.books
@@ -162,6 +158,19 @@ class ExcelModel(object):
             if(str(v.range._value)=="none"):
                 self._update_constants(v.range._value)
                 break
+
+    def load_bin_file(self, f):
+        """Load already open filehandle"""
+        xl_model = dill.load(f)
+        self._populate_self(xl_model)
+
+    def load_bin(self, fn):
+        """Load file by name"""
+        #self.dsp = load_dispatcher(fn + ".dsp")
+        #self.cells = self._load_bin(fn + ".cell")
+        #self.books = self._load_bin(fn + ".book")
+        xl_model = self._load_bin(fn + ".fxl")
+        self._populate_self(xl_model)
 
     def pushes(self, *worksheets, context=None):
         for ws in worksheets:
