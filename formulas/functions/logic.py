@@ -63,3 +63,13 @@ def _and(*args):
 
 FUNCTIONS['AND'] = wrap_func(_and)
 
+def _true():
+    return True
+
+def _false():
+    return False
+
+FUNCTIONS['TRUE'] = wrap_func(_true)
+FUNCTIONS['FALSE'] = wrap_func(_false)
+
+

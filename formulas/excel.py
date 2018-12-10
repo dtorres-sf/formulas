@@ -253,7 +253,7 @@ class ExcelModel:
         crd = formula_references.get(crd, crd)
         try:
             cell = Cell(crd, cell.value, context=context).compile()
-        except FormulaError:
+        except FormulaError as e:
             # There was an error so set this value with the NA error using the excel function
             cell = Cell(crd, "=NA()", context=context).compile()
         if cell.output in self.cells:
