@@ -74,8 +74,7 @@ def date_output_parser(result):
         return result.days
     return result
 
-numeric_wrap = functools.partial(wrap_ufunc, otype=lambda *a: OperatorArray, input_parser=numeric_input_parser, output_parser=date_output_parser, return_func=value_return)
-#numeric_wrap = functools.partial(wrap_ufunc, otype=lambda *a: np.float64, input_parser=date_input_parser)
+numeric_wrap = functools.partial(wrap_ufunc, input_parser=numeric_input_parser, output_parser=date_output_parser, return_func=value_return)
 
 # noinspection PyTypeChecker
 OPERATORS.update({k: numeric_wrap(v) for k, v in {

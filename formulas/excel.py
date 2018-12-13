@@ -78,7 +78,8 @@ class ExcelModel:
         return self
 
 
-    def _load_bin(self, fn):
+    @classmethod
+    def _load_bin(cls, fn):
         with open(fn, 'rb') as f:
             return dill.load(f)
 
@@ -89,54 +90,21 @@ class ExcelModel:
     def save_bin(self, fn):
         self._save_bin(self, fn + ".fxl")
 
-    def _update_constant_value(self, attr, value):
-        setattr(sh.utils.cst, attr, value)
-        setattr(sh.utils.sol, attr, value)
-        setattr(sh.dispatcher, attr, value)
-        setattr(sh.utils.alg, attr, value)
-        setattr(sh.utils, attr, value)
-        setattr(sh.utils.base, attr, value)
-        setattr(sh, attr, value)
-
-    def _update_constants(self, constant_token):
-        k = constant_token
-        if(str(k) == "start"):
-            self._update_constant_value("START", k)
-        if(str(k) == "empty"):
-            self._update_constant_value("EMPTY", k)
-        if(str(k) == "none"):
-            self._update_constant_value("NONE", k)
-        if(str(k) == "sink"):
-            self._update_constant_value("SINK", k)
-        if(str(k) == "end"):
-            self._update_constant_value("END", k)
-        if(str(k) == "self"):
-            self._update_constant_value("SELF", k)
-        if(str(k) == "plot"):
-            self._update_constant_value("PLOT", k)
-
     def _populate_self(self, xl_model):
         self.dsp = xl_model.dsp
         self.cells = xl_model.cells
         self.books = xl_model.books
         self.calculate = self.dsp.dispatch
-        for k, v in self.dsp.nodes.items():
-            self._update_constants(k)
-            self._update_constants(v)
-        for k, v in self.cells.items():
-            if(str(v.range._value)=="none"):
-                self._update_constants(v.range._value)
-                break
 
-    def load_bin_file(self, f):
+    @classmethod
+    def load_bin_file(cls, f):
         """Load already open filehandle"""
-        xl_model = dill.load(f)
-        self._populate_self(xl_model)
+        return dill.load(f)
 
-    def load_bin(self, fn):
+    @classmethod
+    def load_bin(cls, fn):
         """Load file by name"""
-        xl_model = self._load_bin(fn + ".fxl")
-        self._populate_self(xl_model)
+        return cls._load_bin(fn + ".fxl")
 
     def pushes(self, *worksheets, context=None):
         for ws in worksheets:
