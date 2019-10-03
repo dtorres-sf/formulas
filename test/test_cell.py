@@ -316,6 +316,14 @@ class TestCell(unittest.TestCase):
         ('A1', '=TRUE()', {}, '<Ranges>(A1)=[[True]]'),
         ('A1', '=ROUND(2.5,0)', {}, '<Ranges>(A1)=[[3.0]]'),
         ('A1', '=ROUND(2.35,1)', {}, '<Ranges>(A1)=[[2.4]]'),
+        ('A1', '=CONCAT("con", "cat", "enate")', {}, '<Ranges>(A1)=[[\'concatenate\']]'),
+        ('A1', '=CONCAT(A2:E2)', {
+            'A2:E2':[["h", "e", "l", "l", 0.15]]
+        }, '<Ranges>(A1)=[[\'hell0.15\']]'),
+        ('A1', '=CONCAT(A2:E2, A3:E3, "curl")', {
+            'A2:E2':[["h", "e", "l", "l", "o"]],
+            'A3:E3':[["h", "e", "l", "l", "o"]]
+        }, '<Ranges>(A1)=[[\'hellohellocurl\']]'),
         # ('A1:D1', '=IF({0,-0.2,0},{2,3},{1})', {},
         #  '<Ranges>(A1:D1)=[[1 2 1 #N/A]]'),
         # ('A1:D1', '=IF({0,-2,0},{2,3},{1,4})', {},
